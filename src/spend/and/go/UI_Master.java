@@ -1,7 +1,12 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Name: Ildar Nasirov
+ * Project Name: Spend and Go
+ * Version: 0.5
+ * NITV:  - Transaction list self manages
+ * ToDo:  - fix input by user in terms of decimals
+ *        - add the quick-select option
+ *        - improve functionality of product entry
+ *        - add the functionality of budget management
  */
 package spend.and.go;
 
@@ -12,6 +17,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -27,11 +33,15 @@ public class UI_Master extends javax.swing.JFrame {
      * Creates new form UI_Master
      */
     public static File file = new File("C:\\Users\\ildar\\OneDrive\\Documents\\NetBeansProjects\\Tests\\SpendAndGo.txt");
+    public static File transactions = new File("C:\\Users\\ildar\\OneDrive\\Documents\\NetBeansProjects\\Tests\\Transactions.txt");
     private double mealPlanAmt = -1;
     private double flexAmt = -1;
     private double daysAmt = -1;
     private boolean combine = false;
-    ArrayList  <String> neededInfo = new ArrayList();
+    ArrayList<String> neededInfo = new ArrayList();
+    TransactionsQueue transactionsList = new TransactionsQueue(10);
+    double priceMain = -1;
+    double balanceMain = -1;
 
     public UI_Master() {
 
@@ -65,7 +75,7 @@ public class UI_Master extends javax.swing.JFrame {
         PriceMain = new javax.swing.JTextField();
         jLabel20 = new javax.swing.JLabel();
         ConfirmMain = new javax.swing.JButton();
-        jButton1 = new javax.swing.JButton();
+        PastTransactions = new javax.swing.JButton();
         jLabel23 = new javax.swing.JLabel();
         FlexMain = new javax.swing.JLabel();
         Splash = new javax.swing.JPanel();
@@ -139,17 +149,34 @@ public class UI_Master extends javax.swing.JFrame {
         jLabel16.setText("      Non-Quick Select");
 
         LimitMain.setForeground(new java.awt.Color(204, 204, 204));
-        LimitMain.setValue(50);
+        LimitMain.setToolTipText("");
+        LimitMain.setValue(55);
 
         jLabel18.setFont(new java.awt.Font("Trebuchet MS", 1, 12)); // NOI18N
         jLabel18.setText("Name:");
 
-        NamePrice.setText("Please Enter a Value");
+        NamePrice.setText("Please Enter a Name");
+        NamePrice.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                NamePriceMouseClicked(evt);
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                NamePriceMouseExited(evt);
+            }
+        });
 
         jLabel19.setFont(new java.awt.Font("Trebuchet MS", 1, 12)); // NOI18N
         jLabel19.setText("Price:");
 
         PriceMain.setText("Please Enter a Value");
+        PriceMain.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                PriceMainMouseClicked(evt);
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                PriceMainMouseExited(evt);
+            }
+        });
 
         jLabel20.setFont(new java.awt.Font("Trebuchet MS", 1, 12)); // NOI18N
         jLabel20.setText("Your daily limit:");
@@ -161,10 +188,10 @@ public class UI_Master extends javax.swing.JFrame {
             }
         });
 
-        jButton1.setText("Show Past Transactions");
-        jButton1.addActionListener(new java.awt.event.ActionListener() {
+        PastTransactions.setText("Show Past Transactions");
+        PastTransactions.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton1ActionPerformed(evt);
+                PastTransactionsActionPerformed(evt);
             }
         });
 
@@ -195,21 +222,21 @@ public class UI_Master extends javax.swing.JFrame {
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, MainLayout.createSequentialGroup()
                         .addGroup(MainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addGroup(MainLayout.createSequentialGroup()
-                                .addGap(137, 137, 137)
-                                .addComponent(ConfirmMain)
-                                .addGap(0, 0, Short.MAX_VALUE))
-                            .addGroup(MainLayout.createSequentialGroup()
                                 .addComponent(jLabel15)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                 .addComponent(BalanceMain)
                                 .addGap(18, 18, 18)
-                                .addComponent(jButton1))
-                            .addGroup(MainLayout.createSequentialGroup()
-                                .addComponent(Option1Main)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(Option2Main)
-                                .addGap(61, 61, 61)
-                                .addComponent(Option3Main)))
+                                .addComponent(PastTransactions))
+                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, MainLayout.createSequentialGroup()
+                                .addGroup(MainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, MainLayout.createSequentialGroup()
+                                        .addGap(137, 137, 137)
+                                        .addComponent(ConfirmMain))
+                                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, MainLayout.createSequentialGroup()
+                                        .addComponent(Option1Main)
+                                        .addGap(67, 67, 67)
+                                        .addComponent(Option2Main)))
+                                .addGap(0, 0, Short.MAX_VALUE)))
                         .addGap(34, 34, 34))))
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, MainLayout.createSequentialGroup()
                 .addGroup(MainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -223,8 +250,9 @@ public class UI_Master extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 30, Short.MAX_VALUE)
                 .addGroup(MainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(FlexMain)
-                    .addComponent(jLabel23))
-                .addGap(50, 50, 50))
+                    .addComponent(jLabel23)
+                    .addComponent(Option3Main))
+                .addGap(45, 45, 45))
             .addGroup(MainLayout.createSequentialGroup()
                 .addGap(143, 143, 143)
                 .addComponent(jLabel5)
@@ -240,7 +268,7 @@ public class UI_Master extends javax.swing.JFrame {
                     .addGroup(MainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                         .addComponent(jLabel15)
                         .addComponent(BalanceMain))
-                    .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 21, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(PastTransactions, javax.swing.GroupLayout.PREFERRED_SIZE, 21, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jLabel17)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -694,17 +722,29 @@ public class UI_Master extends javax.swing.JFrame {
 
     }//GEN-LAST:event_FlexAmtUpdaterActionPerformed
     private void ConfirmUpdaterActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ConfirmUpdaterActionPerformed
-
     }//GEN-LAST:event_ConfirmUpdaterActionPerformed
     private void Option3MainActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_Option3MainActionPerformed
-
     }//GEN-LAST:event_Option3MainActionPerformed
     private void ConfirmMainActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ConfirmMainActionPerformed
-
+        if (priceMain == -1 && NamePrice.getText().equals("Please Enter a Name")) {
+            JOptionPane.showMessageDialog(null, "Sorry, it seems that your input is invalid", "Error", JOptionPane.PLAIN_MESSAGE);
+        } else {
+            if (transactionsList.isFull()) {
+                transactionsList.dequeue();
+            }
+            transactionsList.enqueue(priceMain + " ---- " + NamePrice.getText());
+            PriceMain.setText("Please Enter a Value");
+            NamePrice.setText("Please Enter a Name");
+        }
     }//GEN-LAST:event_ConfirmMainActionPerformed
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-    System.out.println(neededInfo.size());
-    }//GEN-LAST:event_jButton1ActionPerformed
+    private void PastTransactionsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_PastTransactionsActionPerformed
+        JOptionPane.showMessageDialog(null, transactionsList.toString(), "Transactions", JOptionPane.PLAIN_MESSAGE);
+        try{
+            toWriteQueue(transactionsList.toString());
+        }catch(Exception e){
+             Logger.getLogger(UI_Master.class.getName()).log(Level.SEVERE, null, e);
+        }
+    }//GEN-LAST:event_PastTransactionsActionPerformed
     private void IncludeConfirmActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_IncludeConfirmActionPerformed
         try {
             if (IncludeConfirm.isSelected()) {
@@ -728,18 +768,19 @@ public class UI_Master extends javax.swing.JFrame {
             } else {
                 try {
                     toWrite("true" + "\n" + mealPlanAmt + "\n" + flexAmt + "\n" + daysAmt);
+                    toWriteQueue("");
                     setup();
                 } catch (Exception ex) {
                     Logger.getLogger(UI_Master.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
-            
         } else {
             if (daysAmt == -1 || mealPlanAmt == -1) {
                 JOptionPane.showMessageDialog(null, "Please Fill Out Your Information Before Proceeding", "Error", JOptionPane.ERROR_MESSAGE);
             } else {
                 try {
                     toWrite("false" + "\n" + mealPlanAmt + "\n" + daysAmt);
+                    toWriteQueue("");
                     setup();
                 } catch (Exception ex) {
                     Logger.getLogger(UI_Master.class.getName()).log(Level.SEVERE, null, ex);
@@ -756,7 +797,7 @@ public class UI_Master extends javax.swing.JFrame {
     }//GEN-LAST:event_MealPlanAmtMouseClicked
     private void MealPlanAmtMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_MealPlanAmtMouseExited
         try {
-            mealPlanAmt = Integer.parseInt(MealPlanAmt.getText());
+            mealPlanAmt = Double.parseDouble(MealPlanAmt.getText());
             if (mealPlanAmt > 9999 || mealPlanAmt < 0) {
                 JOptionPane.showMessageDialog(null, "Unrealistic or Invalid Number", "Error", JOptionPane.ERROR_MESSAGE);
                 MealPlanAmt.setText("Please Enter a Numerical Value");
@@ -780,7 +821,7 @@ public class UI_Master extends javax.swing.JFrame {
 
     private void FlexAmtMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_FlexAmtMouseExited
         try {
-            flexAmt = Integer.parseInt(FlexAmt.getText());
+            flexAmt = Double.parseDouble(FlexAmt.getText());
             if (flexAmt > 9999 || flexAmt < 0) {
                 JOptionPane.showMessageDialog(null, "Unrealistic or Invalid Number", "Error", JOptionPane.ERROR_MESSAGE);
                 FlexAmt.setText("Please Enter a Numerical Value");
@@ -823,6 +864,39 @@ public class UI_Master extends javax.swing.JFrame {
             jLabel21.grabFocus();
         };
     }//GEN-LAST:event_DaysAmtMouseExited
+
+    private void PriceMainMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_PriceMainMouseExited
+        try {
+            priceMain = Double.parseDouble(PriceMain.getText());
+            if (priceMain > 9999 || priceMain < 0) {
+                JOptionPane.showMessageDialog(null, "Unrealistic or Invalid Number", "Error", JOptionPane.ERROR_MESSAGE);
+                PriceMain.setText("Please Enter a Value");
+                priceMain = -1;
+            }
+        } catch (NumberFormatException ex) {
+            PriceMain.setText("Please Enter a Value");
+            priceMain = -1;
+        } catch (Exception ex) {
+            Logger.getLogger(UI_Master.class
+                    .getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            jLabel5.grabFocus();
+        };
+    }//GEN-LAST:event_PriceMainMouseExited
+
+    private void PriceMainMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_PriceMainMouseClicked
+        PriceMain.setText("");
+    }//GEN-LAST:event_PriceMainMouseClicked
+
+    private void NamePriceMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_NamePriceMouseClicked
+        NamePrice.setText("");
+    }//GEN-LAST:event_NamePriceMouseClicked
+
+    private void NamePriceMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_NamePriceMouseExited
+        if (NamePrice.getText().equals("")) {
+            NamePrice.setText("Please Enter a Name");
+        }
+    }//GEN-LAST:event_NamePriceMouseExited
 
     /**
      * @param args the command line arguments
@@ -872,28 +946,31 @@ public class UI_Master extends javax.swing.JFrame {
 
     private void setup() {
         if (file.exists()) {
+
             SpendAndGo.setEnabledAt(0, true);
             SpendAndGo.setEnabledAt(2, true);
             SpendAndGo.remove(Splash);
-            try{
+
+            try {
                 toRead();
+                toReadQueue();
                 mealPlanAmt = Double.parseDouble(neededInfo.get(1));
-                if(neededInfo.get(0).equalsIgnoreCase("false")){
+                if (neededInfo.get(0).equalsIgnoreCase("false")) {
                     combine = false;
                     flexAmt = 0;
                     daysAmt = Double.parseDouble(neededInfo.get(2));
-                    BalanceMain.setText(Double.toString(mealPlanAmt));
+                    balanceMain = mealPlanAmt;
+                    BalanceMain.setText("$" + new DecimalFormat("##.00").format(balanceMain));
                     FlexMain.setVisible(false);
                     jLabel23.setVisible(false);
-                }else{
+                } else {
                     combine = true;
                     flexAmt = Double.parseDouble(neededInfo.get(2));
                     daysAmt = Double.parseDouble(neededInfo.get(3));
-                    BalanceMain.setText("$ " + Double.toString(mealPlanAmt + flexAmt));
-                    
+                    balanceMain = mealPlanAmt + flexAmt;
+                    BalanceMain.setText("$ " + new DecimalFormat("##.00").format(balanceMain));
                 }
-            } catch(Exception e){
-                //System.out.println(info.size());
+            } catch (Exception e) {
                 System.out.println("The file does not exist");
             }
         } else {
@@ -910,13 +987,33 @@ public class UI_Master extends javax.swing.JFrame {
         bw.close();
     }
 
+    private void toReadQueue() throws FileNotFoundException, IOException {
+        FileReader fr = new FileReader(transactions);
+        BufferedReader br = new BufferedReader(fr);
+        String line = br.readLine();
+        while (line != null) {
+            transactionsList.enqueue(line);
+            System.out.println(line);
+            line = br.readLine();
+        }
+        br.close();
+    }
+
+    private void toWriteQueue(String line) throws IOException {
+        FileWriter fw = new FileWriter(transactions);
+        BufferedWriter bw = new BufferedWriter(fw);
+        bw.write(line);
+        bw.close();
+
+    }
+
     private void toRead() throws FileNotFoundException, IOException {
         FileReader fr = new FileReader(file);
         BufferedReader br = new BufferedReader(fr);
         String line = br.readLine();
-        while(line != null){
+        while (line != null) {
             neededInfo.add(line);
-            System.out.println(line);
+            //  System.out.println(line);
             line = br.readLine();
         }
         br.close();
@@ -946,6 +1043,7 @@ public class UI_Master extends javax.swing.JFrame {
     private javax.swing.JButton Option2Main;
     private javax.swing.JPanel Option3;
     private javax.swing.JButton Option3Main;
+    private javax.swing.JButton PastTransactions;
     private javax.swing.JTextField PriceMain;
     private javax.swing.JFormattedTextField PriceQ1;
     private javax.swing.JFormattedTextField PriceQ2;
@@ -953,7 +1051,6 @@ public class UI_Master extends javax.swing.JFrame {
     private javax.swing.JTabbedPane SpendAndGo;
     private javax.swing.JPanel Splash;
     private javax.swing.JPanel Updater;
-    private javax.swing.JButton jButton1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
