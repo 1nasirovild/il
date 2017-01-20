@@ -2,11 +2,11 @@
  * Name: Ildar Nasirov
  * Project Name: Spend and Go
  * Version: 0.5
- * NITV:  - Transaction list self manages
- * ToDo:  - fix input by user in terms of decimals
- *        - add the quick-select option
- *        - improve functionality of product entry
- *        - add the functionality of budget management
+ * NITV:  - Transaction list self finally manages
+ ************************************************************************
+ * ToDo:  - add the quick-select option
+ *        - add the functionality of the daily budget management
+ ************************************************************************
  */
 package spend.and.go;
 
@@ -25,18 +25,18 @@ import javax.swing.JOptionPane;
 
 /**
  *
- * @author ildar
+ * @author Ildar
  */
 public class UI_Master extends javax.swing.JFrame {
 
     /**
-     * Creates new form UI_Master
+     * Variable Declarations
      */
     public static File file = new File("C:\\Users\\ildar\\OneDrive\\Documents\\NetBeansProjects\\Tests\\SpendAndGo.txt");
     public static File transactions = new File("C:\\Users\\ildar\\OneDrive\\Documents\\NetBeansProjects\\Tests\\Transactions.txt");
     private double mealPlanAmt = -1;
     private double flexAmt = -1;
-    private double daysAmt = -1;
+    private int daysAmt = -1;
     private boolean combine = false;
     ArrayList<String> neededInfo = new ArrayList();
     TransactionsQueue transactionsList = new TransactionsQueue(10);
@@ -716,33 +716,61 @@ public class UI_Master extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
     private void PriceQ1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_PriceQ1ActionPerformed
-
     }//GEN-LAST:event_PriceQ1ActionPerformed
     private void FlexAmtUpdaterActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_FlexAmtUpdaterActionPerformed
-
     }//GEN-LAST:event_FlexAmtUpdaterActionPerformed
     private void ConfirmUpdaterActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ConfirmUpdaterActionPerformed
     }//GEN-LAST:event_ConfirmUpdaterActionPerformed
     private void Option3MainActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_Option3MainActionPerformed
     }//GEN-LAST:event_Option3MainActionPerformed
     private void ConfirmMainActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ConfirmMainActionPerformed
-        if (priceMain == -1 && NamePrice.getText().equals("Please Enter a Name")) {
-            JOptionPane.showMessageDialog(null, "Sorry, it seems that your input is invalid", "Error", JOptionPane.PLAIN_MESSAGE);
+        if (priceMain == -1 || NamePrice.getText().equals("Please Enter a Name")
+                || priceMain > balanceMain) {
+            JOptionPane.showMessageDialog(null, "Sorry, it seems that "
+                    + "your input is invalid, or insufficient funds",
+                    "Error", JOptionPane.PLAIN_MESSAGE);
         } else {
-            if (transactionsList.isFull()) {
-                transactionsList.dequeue();
+
+            try {
+                if (transactionsList.isFull()) {
+                    transactionsList.dequeue();
+                }
+                transactionsList.enqueue("$ " + priceMain + " ---- " + NamePrice.getText());
+                PriceMain.setText("Please Enter a Value");
+                NamePrice.setText("Please Enter a Name");
+                if (!combine) {
+                    mealPlanAmt = mealPlanAmt - priceMain;
+                    balanceMain = balanceMain - priceMain;
+                    toWrite(Boolean.toString(combine) + "\n" + mealPlanAmt + "\n" + daysAmt);
+                } else {
+                    System.out.println(priceMain);
+                    if (priceMain >= mealPlanAmt) {
+                        priceMain = priceMain - mealPlanAmt;
+                        flexAmt = flexAmt - priceMain;
+                        mealPlanAmt = 0;
+                    } else {
+                        mealPlanAmt = mealPlanAmt - priceMain;
+                    }
+                    balanceMain = mealPlanAmt + flexAmt;
+                    FlexMain.setText("$" + new DecimalFormat("##.00").format(flexAmt));
+                    toWrite(Boolean.toString(combine) + "\n" + mealPlanAmt + "\n" + flexAmt + "\n" + daysAmt);
+                }
+                BalanceMain.setText("$" + new DecimalFormat("##.00").format(balanceMain));
+                priceMain = -1;
+
+            } catch (Exception e) {
+                Logger.getLogger(UI_Master.class.getName()).log(Level.SEVERE, null, e);
             }
-            transactionsList.enqueue(priceMain + " ---- " + NamePrice.getText());
-            PriceMain.setText("Please Enter a Value");
-            NamePrice.setText("Please Enter a Name");
         }
+
+
     }//GEN-LAST:event_ConfirmMainActionPerformed
     private void PastTransactionsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_PastTransactionsActionPerformed
         JOptionPane.showMessageDialog(null, transactionsList.toString(), "Transactions", JOptionPane.PLAIN_MESSAGE);
-        try{
+        try {
             toWriteQueue(transactionsList.toString());
-        }catch(Exception e){
-             Logger.getLogger(UI_Master.class.getName()).log(Level.SEVERE, null, e);
+        } catch (Exception e) {
+
         }
     }//GEN-LAST:event_PastTransactionsActionPerformed
     private void IncludeConfirmActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_IncludeConfirmActionPerformed
@@ -803,10 +831,10 @@ public class UI_Master extends javax.swing.JFrame {
                 MealPlanAmt.setText("Please Enter a Numerical Value");
                 mealPlanAmt = -1;
             }
+            MealPlanAmt.setText(new DecimalFormat("##.00").format(mealPlanAmt));
         } catch (NumberFormatException ex) {
             MealPlanAmt.setText("Please Enter a Numerical Value");
             mealPlanAmt = -1;
-
         } catch (Exception ex) {
             Logger.getLogger(UI_Master.class
                     .getName()).log(Level.SEVERE, null, ex);
@@ -827,6 +855,7 @@ public class UI_Master extends javax.swing.JFrame {
                 FlexAmt.setText("Please Enter a Numerical Value");
                 flexAmt = -1;
             }
+            FlexAmt.setText(new DecimalFormat("##.00").format(flexAmt));
         } catch (NumberFormatException ex) {
             FlexAmt.setText("Please Enter a Numerical Value");
             flexAmt = -1;
@@ -873,6 +902,7 @@ public class UI_Master extends javax.swing.JFrame {
                 PriceMain.setText("Please Enter a Value");
                 priceMain = -1;
             }
+            PriceMain.setText(new DecimalFormat("##.00").format(priceMain));
         } catch (NumberFormatException ex) {
             PriceMain.setText("Please Enter a Value");
             priceMain = -1;
@@ -958,17 +988,21 @@ public class UI_Master extends javax.swing.JFrame {
                 if (neededInfo.get(0).equalsIgnoreCase("false")) {
                     combine = false;
                     flexAmt = 0;
-                    daysAmt = Double.parseDouble(neededInfo.get(2));
+                    daysAmt = Integer.parseInt(neededInfo.get(2));
                     balanceMain = mealPlanAmt;
                     BalanceMain.setText("$" + new DecimalFormat("##.00").format(balanceMain));
+
+                    FlexMain.setVisible(false);
+                    jLabel23.setVisible(false);
                     FlexMain.setVisible(false);
                     jLabel23.setVisible(false);
                 } else {
                     combine = true;
                     flexAmt = Double.parseDouble(neededInfo.get(2));
-                    daysAmt = Double.parseDouble(neededInfo.get(3));
+                    daysAmt = Integer.parseInt(neededInfo.get(3));
                     balanceMain = mealPlanAmt + flexAmt;
                     BalanceMain.setText("$ " + new DecimalFormat("##.00").format(balanceMain));
+                    FlexMain.setText("$ " + new DecimalFormat("##.00").format(flexAmt));
                 }
             } catch (Exception e) {
                 System.out.println("The file does not exist");
@@ -993,7 +1027,6 @@ public class UI_Master extends javax.swing.JFrame {
         String line = br.readLine();
         while (line != null) {
             transactionsList.enqueue(line);
-            System.out.println(line);
             line = br.readLine();
         }
         br.close();
@@ -1013,7 +1046,6 @@ public class UI_Master extends javax.swing.JFrame {
         String line = br.readLine();
         while (line != null) {
             neededInfo.add(line);
-            //  System.out.println(line);
             line = br.readLine();
         }
         br.close();
