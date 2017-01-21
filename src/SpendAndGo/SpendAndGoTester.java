@@ -3,13 +3,13 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package spend.and.go;
+package SpendAndGo;
 
 /**
  *
  * @author ildar
  */
-public class SpendAndGo {
+public class SpendAndGoTester {
 
     /**
      * @param args the command line arguments
@@ -17,13 +17,13 @@ public class SpendAndGo {
     public static void main(String[] args) {
 
         TransactionsQueue q = new TransactionsQueue(4);
-
-        q.enqueue("First element");
-        q.enqueue("second element");
-        q.enqueue("third element");
-        q.dequeue();
-        System.out.println("----------");
-        System.out.println(q.capacity());
+        InfoDictionary a = new InfoDictionary(3);
+        
+        a.addInfo("#1", "#1s");
+        a.addInfo("#2", "#2s");
+        a.addInfo("#3", "#3s");
+        
+        System.out.println(a.toString());
         
         
         

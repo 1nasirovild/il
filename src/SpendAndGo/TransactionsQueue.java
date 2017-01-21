@@ -1,16 +1,16 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Name: Ildar Nasirov
+ * Project Name: Transaction Queue
+ * Version: 1.0
+ * ADT: Queue
  */
-package spend.and.go;
+package SpendAndGo;
 
 /**
  *
- * @author ildar
+ * @author Ildar
  */
 public class TransactionsQueue extends Object{
-
     private final String[] queue;
     private int first = 0;
     private int last = 0;
